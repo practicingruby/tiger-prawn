@@ -4,4 +4,8 @@ pdf = Prawn::Document.new
 pdf.move_to(100,100)
 pdf.line_to(200,200)
 pdf.stroke
+pdf.start_new_page(:layout => :landscape)
+pdf.move_to(100,100)
+pdf.line_to(300,300)
+pdf.stroke
 pdf.render_file("line.pdf")
