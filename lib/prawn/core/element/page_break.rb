@@ -3,7 +3,7 @@ module Prawn
     module Element
       class PageBreak
         def initialize(options={})
-          @options = {}
+          @options = options
         end
         
         def render_on(document)

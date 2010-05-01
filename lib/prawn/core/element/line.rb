@@ -6,6 +6,8 @@ module Prawn
           @point1 = point1
           @point2 = point2
         end
+        
+        attr_accessor :point1, :point2
       
         def render_on(document)
           document.move_to(*@point1)
