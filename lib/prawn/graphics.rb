@@ -1,15 +1,25 @@
 module Prawn
-  module Graphics 
-    def move_to(x,y)
-      state.page.puts("%.3f %.3f m" % [ x, y ])
-    end
-    
-    def line_to(x,y)
-      state.page.puts("%.3f %.3f l" % [ x, y ])
-    end
-    
+  module Graphics
     def stroke
-      state.page.puts("S")
+      paint(:stroke)
+    end
+    
+    def fill
+      paint(:fill)
+    end
+    
+    def fill_and_stroke
+      paint(:fill_and_stroke)
+    end
+    
+    def paint(paint_command)
+      state.box_contents << ::Prawn::Core::Element::Paint.new(paint_command)
+    end
+    
+    def line(point1, point2)
+      state.box_contents << ::Prawn::Core::Element::Line.new(point1, point2)
     end
   end
 end
+
+Prawn::Document.extensions << Prawn::Graphics

@@ -1,14 +1,24 @@
 module Prawn
   class Document
-    include ::Prawn::Graphics
+    include ::Prawn::Core::Graphics
+    
+    def self.extensions
+      @extensions ||= []
+    end
+
+    def self.inherited(base) #:nodoc:
+      extensions.each { |e| base.extensions << e }
+    end
     
     def initialize(options={}, &block)
-      @page_number    = 0
+      self.class.extensions.reverse_each { |e| extend e }
       
+      @page_number    = 0
+
       @internal_state = Prawn::Core::DocumentState.new(options)
       @internal_state.populate_pages_from_store(self)
       min_version(state.store.min_version) if state.store.min_version
-      
+
       options[:size] = options.delete(:page_size)
       options[:layout] = options.delete(:page_layout)
 
@@ -23,34 +33,14 @@ module Prawn
         end
       end
     end
-    
+
     def state
       @internal_state
     end
-    
-    def min_version(min)
-      state.version = min if min > state.version
-    end
-    
-    def go_to_page(k)
-      self.page_number = k
-      state.page = state.pages[k-1]
-    end
-    
-    def page_count
-      state.page_count
-    end
-    
-    def compression_enabled?
-      !!state.compress
-    end
-    
-    def render
-      ::Prawn::Core::Renderer.render(self)
-    end
 
     # Renders the PDF document to file.
-    #
+    attr_accessor :page_number
+    
     #   pdf.render_file "foo.pdf"
     #
     def render_file(filename)
@@ -58,39 +48,58 @@ module Prawn
       File.open(filename,mode) { |f| f << render }
     end
     
-    attr_accessor :page_number
-    
-    extendable_features = Module.new do
-      def start_new_page(options = {})
-        if last_page = state.page
-          last_page_size    = last_page.size
-          last_page_layout  = last_page.layout
-          last_page_margins = last_page.margins
-        end
-  
-        state.page = Prawn::Core::Page.new(self, 
-          :size    => options[:size]   || last_page_size, 
-          :layout  => options[:layout] || last_page_layout,
-          :margins => last_page_margins )
-  
-        #use_graphic_settings
-     
-        unless options[:orphan]
-          state.insert_page(state.page, @page_number)
-          self.page_number += 1
-     
-          #save_graphics_state
-      
-          #canvas { image(@background, :at => bounds.top_left) } if @background 
-          #@y = @bounding_box.absolute_top
-     
-          #float do
-          #  state.on_page_create_action(self)
-          #end
-        end
-      end  
+    def min_version(min)
+      state.version = min if min > state.version
     end
-  
-    include extendable_features
+
+    def go_to_page(k)
+      self.page_number = k
+      state.page = state.pages[k-1]
+    end
+
+    def page_count
+      state.page_count
+    end
+
+    def compression_enabled?
+      !!state.compress
+    end
+
+    def render
+      ::Prawn::Core::Renderer.render(self)
+    end
+    
+    def start_new_page(options={})
+      state.box_contents << ::Prawn::Core::Element::PageBreak.new(options)
+    end
+    
+    def start_new_page!(options = {})
+      if last_page = state.page
+        last_page_size    = last_page.size
+        last_page_layout  = last_page.layout
+        last_page_margins = last_page.margins
+      end
+
+      state.page = Prawn::Core::Page.new(self, 
+        :size    => options[:size]   || last_page_size, 
+        :layout  => options[:layout] || last_page_layout,
+        :margins => last_page_margins )
+
+      #use_graphic_settings
+   
+      unless options[:orphan]
+        state.insert_page(state.page, @page_number)
+        self.page_number += 1
+   
+        #save_graphics_state
+    
+        #canvas { image(@background, :at => bounds.top_left) } if @background 
+        #@y = @bounding_box.absolute_top
+   
+        #float do
+        #  state.on_page_create_action(self)
+        #end
+      end
+    end  
   end
 end

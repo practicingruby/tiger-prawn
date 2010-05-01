@@ -18,6 +18,10 @@ module Prawn
       attr_accessor :xref_offset
       
       def render
+        state.box_contents.each do |e|
+          e.render_on(document)
+        end
+        
         finalize_all_page_contents
 
         render_header
